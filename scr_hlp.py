@@ -140,9 +140,9 @@ class scr_hlp:
         if scr_hlp.is_element_exists(xpath):
             if driver==None:
                 driver = scr_hlp.d
-                text = scr_hlp.d.execute_script("""return document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue.innerText"""%xpath)
+                text = scr_hlp.d.execute_script("""node = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath)
             else:
-                text = scr_hlp.d.execute_script("""return document.evaluate("%s", arguments[0], null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue.innerText"""%xpath,driver)
+                text = scr_hlp.d.execute_script("""node = document.evaluate("%s", arguments[0], null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath,driver)
             return text
             #return driver.find_element_by_xpath(xpath).text
     
