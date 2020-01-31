@@ -164,7 +164,9 @@ class scr_hlp:
     @staticmethod
     def click_element(xpath):
         if scr_hlp.is_element_exists(xpath):
+            scr_hlp.print_if_DEBUG("Clicking %s"%xpath)
             scr_hlp.d.execute_script("""var n = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;n.scrollIntoView();n.click()"""%xpath)
+            scr_hlp.print_if_DEBUG("Clicking Complete")
             sleep(1)
             return True
         return False
