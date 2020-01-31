@@ -28,7 +28,7 @@ class scr_hlp:
     def start_chrome():
         options = Options()
 #Added from IAO
-        options.add_argument('--headless')
+        #options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
 #End editing   
