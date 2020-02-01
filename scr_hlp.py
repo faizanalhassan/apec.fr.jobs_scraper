@@ -28,10 +28,14 @@ class scr_hlp:
     def start_chrome():
         options = Options()
 #Added from IAO
-        #options.add_argument('--headless')
+        options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-#End editing   
+        
+#End editing
+        options.add_argument("--window-size=1920,1080")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
         options.add_experimental_option("prefs", {
             "plugins.always_open_pdf_externally": True,
             "download.default_directory": scr_hlp.get_dwnload_dir_path(),
@@ -39,9 +43,12 @@ class scr_hlp:
             "download.directory_upgrade": True,
             "safebrowsing.enabled": True
         })
+        params = {'behavior': 'allow', 'downloadPath':scr_hlp.get_dwnload_dir_path() }
         
         scr_hlp.d = webdriver.Chrome(options=options)
         scr_hlp.d.set_page_load_timeout = 60
+        
+        #scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
     @staticmethod
     def close_chrome():
         if(isinstance(scr_hlp.d,webdriver.Chrome)):
