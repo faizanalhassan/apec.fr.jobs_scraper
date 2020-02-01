@@ -34,7 +34,7 @@ for fonc in Fonctions:
             xlsx_hlp.create_wb(fonc + loc + sec)
             xlsx_hlp.set_all_headers()
             scr_hlp.start_chrome()
-            scr_hlp.load_page(list_page_URL,refresh_also=False)
+            scr_hlp.load_page(list_page_URL)
             sleep(2)
             scr_hlp.click_element("//button[@class='optanon-allow-all accept-cookies-button']")
             

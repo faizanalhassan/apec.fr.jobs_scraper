@@ -45,10 +45,10 @@ class scr_hlp:
         })
         params = {'behavior': 'allow', 'downloadPath':scr_hlp.get_dwnload_dir_path() }
         
-        scr_hlp.d = webdriver.Chrome(options=options)
+        scr_hlp.d = webdriver.Chrome(executable_path="chromedriver",options=options)
         scr_hlp.d.set_page_load_timeout = 60
         
-        #scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
+        scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
     @staticmethod
     def close_chrome():
         if(isinstance(scr_hlp.d,webdriver.Chrome)):
@@ -138,7 +138,9 @@ class scr_hlp:
         except :
             pass
         scr_hlp.click_element("//button[contains(text(),'Autres actions')]")
-        scr_hlp.click_element("//button[contains(text(),'Autres actions')]//following-sibling::div/a[contains(text(),'Exporter')]")
+        pdf_link = scr_hlp.d.find_element_by_xpath("//button[contains(text(),'Autres actions')]//following-sibling::div/a[contains(text(),'Exporter')]").get_attribute("href")
+        scr_hlp.d.get(pdf_link)
+        #scr_hlp.click_element("//button[contains(text(),'Autres actions')]//following-sibling::div/a[contains(text(),'Exporter')]")
         sleep(1)
         return photo_url
     @staticmethod
