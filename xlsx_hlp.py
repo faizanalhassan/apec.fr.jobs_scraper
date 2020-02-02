@@ -99,7 +99,7 @@ class xlsx_hlp:
         for sheet in sheets: # write data from old file
             if sheet.name == 'main':
                 ws = xlsx_hlp.ws_main = xlsx_hlp.wb.add_worksheet(sheet.name)
-                xlsx_hlp.row_num_main = sheet.nrows - 1
+                xlsx_hlp.row_num_main = sheet.nrows
                 scr_hlp.print_if_DEBUG("%s was having %i rows prevously."%(sheet.name, sheet.nrows-1))
 
             elif sheet.name == 'compétences':

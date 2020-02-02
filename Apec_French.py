@@ -6,9 +6,9 @@ from xlsx_hlp import xlsx_hlp
 from datetime import datetime
 
 scr_hlp.DEBUG = True
-scr_hlp.EXTRADEBUG = True #use for pausing on some places
+scr_hlp.EXTRADEBUG = False #use for pausing on some places
 
-scr_hlp.dwnload_dir = "downloads"
+scr_hlp.dwnload_dir = "downloads"+datetime.now().strftime("%d%m%y")
 scr_hlp.user_name = "'100158267W'"
 scr_hlp.passwrod = "'Bestshore*05'"
 
@@ -27,9 +27,6 @@ if not os.path.isdir(scr_hlp.get_dwnload_dir_path()):
     scr_hlp.pause_if_EXTRADEBUG("Download dir created")
 
 
-if not os.path.isdir(scr_hlp.get_tmp_dwnld_dir_path()):
-    os.mkdir(scr_hlp.get_tmp_dwnld_dir_path())
-    scr_hlp.pause_if_EXTRADEBUG("tmp dir created")
 
 for fonc in Fonctions:
     for loc in lieux:
@@ -43,6 +40,7 @@ for fonc in Fonctions:
             scr_hlp.click_element("//button[@class='optanon-allow-all accept-cookies-button']")
             
             while True:
+                scr_hlp.pause_if_EXTRADEBUG("Starting job with page_num = %i"%page_num)
                 scr_hlp.load_page(list_page_URL%page_num, wait_ele_xpath="//a[@class='actualLink' and contains(@href,'/detailProfil/')]", ele_count=20)
                 candidates_nodes = scr_hlp.d.find_elements_by_xpath("//a[@class='actualLink' and contains(@href,'/detailProfil/')]")
                 scr_hlp.print_if_DEBUG("Total candidates on this page are: "+str(len(candidates_nodes)))
@@ -54,10 +52,11 @@ for fonc in Fonctions:
                     c_URL = candidates_nodes[i].get_attribute("href")
                     scr_hlp.print_if_DEBUG(str(i)+": Candidate link: "+c_URL)
                     c_page_URLs.append(c_URL)
-
+                
+                scr_hlp.print_if_DEBUG("Total candidates on page_num = %i are %i"%(page_num,len(c_page_URLs)))
                 #load those urls
                 for j in range(0,len(c_page_URLs)):
-                    
+                    scr_hlp.print_if_DEBUG("%i url"%(j+1))
                     scr_hlp.load_page(c_page_URLs[j], wait_ele_xpath="//*[contains(@id,'photo-profil')]/img", ele_count=1)
                     
                     scr_hlp.click_element("//*[contains(@class,'condonnee-profil')]/button") # button hiding tel and mail

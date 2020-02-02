@@ -32,10 +32,7 @@ class scr_hlp:
     def get_dwnload_dir_path():
         return os.path.join(os.path.dirname(os.path.abspath(__file__)),scr_hlp.dwnload_dir)
     
-    @staticmethod
-    def get_tmp_dwnld_dir_path():
-        return os.path.join(scr_hlp.get_dwnload_dir_path(),"tmp")
-
+    
     @staticmethod
     def start_chrome():
         options = Options()
@@ -50,12 +47,12 @@ class scr_hlp:
         options.add_experimental_option('useAutomationExtension', False)
         options.add_experimental_option("prefs", {
             "plugins.always_open_pdf_externally": True,
-            "download.default_directory": scr_hlp.get_tmp_dwnld_dir_path(),
+            "download.default_directory": scr_hlp.get_dwnload_dir_path(),
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
             "safebrowsing.enabled": True
         })
-        params = {'behavior': 'allow', 'downloadPath':scr_hlp.get_tmp_dwnld_dir_path() }
+        params = {'behavior': 'allow', 'downloadPath':scr_hlp.get_dwnload_dir_path() }
         
         scr_hlp.d = webdriver.Chrome(executable_path="chromedriver",options=options)
         scr_hlp.d.set_page_load_timeout = 60
@@ -89,7 +86,7 @@ class scr_hlp:
 
     @staticmethod
     def load_page(url, do_handle_login = True,wait_ele_xpath = "",ele_count = 1, refresh_also = True):
-        scr_hlp.print_if_DEBUG("load_page(\nurl=%s,\ndo_handle_login=%r,\nrefresh_also=%r)"%(url, do_handle_login, refresh_also))
+        scr_hlp.print_if_DEBUG("load_page(\nurl=%s,\ndo_handle_login=%r,\nele_count = %i,\nrefresh_also=%r\n)"%(url, do_handle_login,ele_count, refresh_also))
         scr_hlp.wait_until_connected()
         scr_hlp.d.get(url)
         if refresh_also:
@@ -142,21 +139,23 @@ class scr_hlp:
     @staticmethod
     def handle_download_items(id):
         photo_url = ""
-        try:
-            if len(scr_hlp.d.find_elements_by_xpath("//*[contains(@id,'photo-profil')]/img[contains(@src,'no-photo.png')]")) == 0:
-                photo_url = scr_hlp.d.find_element_by_xpath("//*[contains(@id,'photo-profil')]/img").get_attribute("src")
-                scr_hlp.print_if_DEBUG(os.path.join(scr_hlp.get_dwnload_dir_path(),photo_url.split("/")[-1]))
-                urllib.request.urlretrieve(photo_url,os.path.join(scr_hlp.get_dwnload_dir_path(),id,photo_url.split("/")[-1]))
-        except :
-            pass
+        
         scr_hlp.click_element("//button[contains(text(),'Autres actions')]")
         pdf_link = scr_hlp.d.find_element_by_xpath("//button[contains(text(),'Autres actions')]//following-sibling::div/a[contains(text(),'Exporter')]").get_attribute("href")
         params = {'behavior': 'allow', 'downloadPath':os.path.join(scr_hlp.get_dwnload_dir_path(),id) }
         scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
-        scr_hlp.d.get(pdf_link)
+        current_page = scr_hlp.d.current_url
+        scr_hlp.load_page(pdf_link, refresh_also=False)
+        scr_hlp.load_page(current_page,wait_ele_xpath="//*[contains(@id,'photo-profil')]/img")
         #scr_hlp.click_element("//button[contains(text(),'Autres actions')]//following-sibling::div/a[contains(text(),'Exporter')]")
-        sleep(1)
-
+        try:
+            if len(scr_hlp.d.find_elements_by_xpath("//*[contains(@id,'photo-profil')]/img[contains(@src,'no-photo.png')]")) == 0:
+                photo_url = scr_hlp.d.find_element_by_xpath("//*[contains(@id,'photo-profil')]/img").get_attribute("src")
+                photo_filename = os.path.join(scr_hlp.get_dwnload_dir_path(),id,photo_url.split("/")[-1])
+                scr_hlp.print_if_DEBUG(photo_filename)
+                urllib.request.urlretrieve(photo_url,photo_filename)
+        except :
+            pass
         #input("Wait download test")#remove
         return photo_url
 
@@ -164,7 +163,7 @@ class scr_hlp:
 
     @staticmethod
     def add_prefix_to_filename(prefix, time_to_wait=60):
-        folder_of_download = scr_hlp.get_tmp_dwnld_dir_path()
+        folder_of_download = scr_hlp.get_dwnload_dir_path()
         time_counter = 0
         while len(os.listdir(folder_of_download)) == 0:
             pass
