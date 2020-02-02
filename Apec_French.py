@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # coding=UTF-8
 
-from scr_hlp import *
-from xlsx_hlp import *
+from scr_hlp import scr_hlp, sleep, os
+from xlsx_hlp import xlsx_hlp
 from datetime import datetime
 
 scr_hlp.DEBUG = True
+scr_hlp.EXTRADEBUG = True #use for pausing on some places
 
 scr_hlp.dwnload_dir = "downloads"
 scr_hlp.user_name = "'100158267W'"
@@ -20,19 +21,22 @@ lieux= ['&lieux=91', '&lieux=77', '&lieux=75',]
 secteursActivite= ['&secteursActivite=101753', '&secteursActivite=101755','&secteursActivite=101757',]
 
 list_page_URL = "https://www.apec.fr/recruteur/mon-espace/candidapec.html#/rechercheNormale?page=%s"
-page_num = 0
 
 if not os.path.isdir(scr_hlp.get_dwnload_dir_path()):
     os.mkdir(scr_hlp.get_dwnload_dir_path())
+    scr_hlp.pause_if_EXTRADEBUG("Download dir created")
 
 
+if not os.path.isdir(scr_hlp.get_tmp_dwnld_dir_path()):
+    os.mkdir(scr_hlp.get_tmp_dwnld_dir_path())
+    scr_hlp.pause_if_EXTRADEBUG("tmp dir created")
 
 for fonc in Fonctions:
     for loc in lieux:
         for sec in secteursActivite:
+            page_num = 0
             list_page_URL = list_page_URL + fonc + loc + sec
             xlsx_hlp.create_wb(fonc + loc + sec)
-            xlsx_hlp.set_all_headers()
             scr_hlp.start_chrome()
             scr_hlp.load_page(list_page_URL)
             sleep(2)
@@ -43,6 +47,7 @@ for fonc in Fonctions:
                 candidates_nodes = scr_hlp.d.find_elements_by_xpath("//a[@class='actualLink' and contains(@href,'/detailProfil/')]")
                 scr_hlp.print_if_DEBUG("Total candidates on this page are: "+str(len(candidates_nodes)))
                 is_next_exists = scr_hlp.is_next_page_exists()
+                scr_hlp.print_if_DEBUG("is_next_exists = %r"%scr_hlp.is_next_page_exists())
                 c_page_URLs = []
                 #save all urls in current page
                 for i in range(0,len(candidates_nodes)):
@@ -54,10 +59,10 @@ for fonc in Fonctions:
                 for j in range(0,len(c_page_URLs)):
                     
                     scr_hlp.load_page(c_page_URLs[j], wait_ele_xpath="//*[contains(@id,'photo-profil')]/img", ele_count=1)
-                    photo_url = scr_hlp.handle_download_items()
+                    
                     scr_hlp.click_element("//*[contains(@class,'condonnee-profil')]/button") # button hiding tel and mail
                     id = c_page_URLs[j].split("/")[-1].split("?")[0]
-
+                    photo_url = scr_hlp.handle_download_items(id)
                     row_main = []
                     row_main.append(c_page_URLs[j].split("/")[-1].split("?")[0]) #id
                     row_main.append(scr_hlp.get_element_text("//*[contains(text(),'Mis à jour le')]")) #date_maj
@@ -154,8 +159,10 @@ for fonc in Fonctions:
                         xlsx_hlp.row_num_nb_moments += 1
                  
                 xlsx_hlp.save_wb()#saves after a page
+                scr_hlp.pause_if_EXTRADEBUG("Going to add page")
                 if not is_next_exists:
                     break
+                scr_hlp.pause_if_EXTRADEBUG("page added")
                 page_num += 1
             xlsx_hlp.wb.close()
             scr_hlp.close_chrome()
