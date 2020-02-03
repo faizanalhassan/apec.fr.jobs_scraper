@@ -91,7 +91,9 @@ class scr_hlp:
         scr_hlp.d.get(url)
         if refresh_also:
             scr_hlp.d.refresh()
+        
         if do_handle_login and scr_hlp.handle_login():
+            
             scr_hlp.load_page(url,False,wait_ele_xpath,ele_count,refresh_also)
         if wait_ele_xpath != "":
             for _ in range(0,10):
@@ -103,6 +105,10 @@ class scr_hlp:
 
     @staticmethod
     def handle_login():
+        while True:
+                if len(scr_hlp.d.find_elements_by_xpath("//input[@id='emailid']")) >= 1:
+                    break
+                sleep(1)
         login_script = """
             username_node = document.querySelector("#emailid");
             if(username_node.offsetParent === null)
