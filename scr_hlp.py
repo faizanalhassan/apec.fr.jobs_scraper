@@ -20,7 +20,7 @@ class scr_hlp:
     current_page = ""
     proxies = open("proxies.txt", "r").readlines()
     prox_i = 0
-
+    
     @staticmethod
     def pause_if_EXTRADEBUG(pausing_msg):
         if scr_hlp.EXTRADEBUG:
@@ -44,8 +44,8 @@ class scr_hlp:
             options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-        
 #End editing
+        options.add_argument(f'--proxy-server={proxy}')
         options.add_argument("--window-size=1920,1080")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
@@ -64,10 +64,25 @@ class scr_hlp:
         scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
     @staticmethod
     def close_chrome():
-        if(isinstance(scr_hlp.d,webdriver.Chrome)):
+        try:
             scr_hlp.d.quit()
-
-        scr_hlp.d = None
+        except:
+            pass
+        finally:
+            scr_hlp.d = None
+    
+    @staticmethod
+    def initialize_browser_setup(url = ""):
+        if url == "":
+            url = scr_hlp.current_page
+        scr_hlp.close_chrome()
+        proxy = scr_hlp.proxies[scr_hlp.prox_i]
+        scr_hlp.print_if_DEBUG(f"Applying proxy = {proxy}")
+        scr_hlp.start_chrome(proxy)
+        scr_hlp.prox_i += 1
+        scr_hlp.load_page(url)
+        sleep(2)
+        scr_hlp.click_element("//button[@class='optanon-allow-all accept-cookies-button']")
 
     @staticmethod
     def is_internet_connected():
@@ -98,23 +113,26 @@ class scr_hlp:
             scr_hlp.d.refresh()
         
         if do_handle_login:
-            username, password = users.get_credentials()
-            # scr_hlp.pause_if_EXTRADEBUG("Login check")
-            while scr_hlp.handle_login(username, password):
-                # scr_hlp.pause_if_EXTRADEBUG("Tried to login")
-                sleep(3)
-                if scr_hlp.is_element_exists("//*[contains(text(),'Votre identifiant ou votre mot de passe est incorrect.') and not(contains(@class,'alert-d-none'))]"):
-                    command = input(f"Webpage is saying that your credentials are wrong.\n\
-                    Recheck the credentials listed in row num {users.rownum} and enter y to continue: ")
-                    if command.lower() != 'y':
-                        scr_hlp.d.quit()
-                        sys.exit()
+            try:
+                username, password = users.get_credentials()
+                # scr_hlp.pause_if_EXTRADEBUG("Login check")
+                while scr_hlp.handle_login(username, password):
+                    # scr_hlp.pause_if_EXTRADEBUG("Tried to login")
+                    sleep(3)
+                    if scr_hlp.is_element_exists("//*[contains(text(),'Votre identifiant ou votre mot de passe est incorrect.') and not(contains(@class,'alert-d-none'))]"):
+                        command = input(f"Webpage is saying that your credentials are wrong.\n\
+                        Recheck the credentials listed in row num {users.rownum} and enter y to continue: ")
+                        if command.lower() != 'y':
+                            scr_hlp.d.quit()
+                            sys.exit()
+                        else:
+                            scr_hlp.d.refresh()
+                            username, password = users.get_credentials()
                     else:
-                        scr_hlp.d.refresh()
-                        username, password = users.get_credentials()
-                else:
-                    scr_hlp.print_if_DEBUG("Login success")
-                    break 
+                        scr_hlp.print_if_DEBUG("Login success")
+                        break 
+            except:
+                scr_hlp.print_if_DEBUG("\t\tMy Custom Exception: Browser reopned")
 
             # scr_hlp.load_page(url,False,wait_ele_xpath,ele_count,refresh_also)
         if wait_ele_xpath != "":

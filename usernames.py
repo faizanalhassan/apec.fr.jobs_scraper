@@ -41,9 +41,12 @@ class users:
         
         if not totalvisits < users.visitslimit:
             scr_hlp.scr_hlp.print_if_DEBUG(f"This user has reached its limit. Total visits {totalvisits}. Trying other user.")
-            scr_hlp.scr_hlp.handle_logout()
+            # scr_hlp.scr_hlp.handle_logout()
             users.rownum += 1
-            return users.get_credentials()
+            # return users.get_credentials()
+            scr_hlp.scr_hlp.initialize_browser_setup()
+            raise Exception("No need to continue the caller function.")
+
         for row in range(sheet.nrows):
             for col in range(sheet.ncols):
                 ws.write(row, col, sheet.cell(row, col).value)

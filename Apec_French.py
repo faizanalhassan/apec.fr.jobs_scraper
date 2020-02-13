@@ -35,10 +35,7 @@ for fonc in Fonctions:
             page_num = 0
             list_page_URL = list_page_URL + fonc + loc + sec
             xlsx_hlp.create_wb(fonc + loc + sec)
-            scr_hlp.start_chrome()
-            scr_hlp.load_page(list_page_URL)
-            sleep(2)
-            scr_hlp.click_element("//button[@class='optanon-allow-all accept-cookies-button']")
+            scr_hlp.initialize_browser_setup(list_page_URL)
             
             while True:
                 scr_hlp.load_page(list_page_URL%page_num, wait_ele_xpath="//a[@class='actualLink' and contains(@href,'/detailProfil/')]", ele_count=20)
