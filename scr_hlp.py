@@ -7,17 +7,20 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from selenium.webdriver.common.action_chains import ActionChains
-
-import urllib.request, os, shutil
+import urllib.request, os, shutil, sys
+from usernames import users
 from time import sleep
+
 
 class scr_hlp:
     DEBUG = False
     EXTRADEBUG = False
     d = None
-    user_name = ""
-    passwrod = ""
     dwnload_dir = ""
+    current_page = ""
+    proxies = open("proxies.txt", "r").readlines()
+    prox_i = 0
+
     @staticmethod
     def pause_if_EXTRADEBUG(pausing_msg):
         if scr_hlp.EXTRADEBUG:
@@ -34,10 +37,11 @@ class scr_hlp:
     
     
     @staticmethod
-    def start_chrome():
+    def start_chrome(proxy):
         options = Options()
 #Added from IAO
-        options.add_argument('--headless')
+        if not scr_hlp.EXTRADEBUG:
+            options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         
@@ -89,12 +93,30 @@ class scr_hlp:
         scr_hlp.print_if_DEBUG("load_page(\nurl=%s,\ndo_handle_login=%r,\nele_count = %i,\nrefresh_also=%r\n)"%(url, do_handle_login,ele_count, refresh_also))
         scr_hlp.wait_until_connected()
         scr_hlp.d.get(url)
+        scr_hlp.current_page = url
         if refresh_also:
             scr_hlp.d.refresh()
         
-        if do_handle_login and scr_hlp.handle_login():
-            
-            scr_hlp.load_page(url,False,wait_ele_xpath,ele_count,refresh_also)
+        if do_handle_login:
+            username, password = users.get_credentials()
+            # scr_hlp.pause_if_EXTRADEBUG("Login check")
+            while scr_hlp.handle_login(username, password):
+                # scr_hlp.pause_if_EXTRADEBUG("Tried to login")
+                sleep(3)
+                if scr_hlp.is_element_exists("//*[contains(text(),'Votre identifiant ou votre mot de passe est incorrect.') and not(contains(@class,'alert-d-none'))]"):
+                    command = input(f"Webpage is saying that your credentials are wrong.\n\
+                    Recheck the credentials listed in row num {users.rownum} and enter y to continue: ")
+                    if command.lower() != 'y':
+                        scr_hlp.d.quit()
+                        sys.exit()
+                    else:
+                        scr_hlp.d.refresh()
+                        username, password = users.get_credentials()
+                else:
+                    scr_hlp.print_if_DEBUG("Login success")
+                    break 
+
+            # scr_hlp.load_page(url,False,wait_ele_xpath,ele_count,refresh_also)
         if wait_ele_xpath != "":
             for _ in range(0,10):
                 if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) >= ele_count:
@@ -102,28 +124,34 @@ class scr_hlp:
                 sleep(1)
 
 
-
     @staticmethod
-    def handle_login():
+    def handle_login(username, password):
         while True:
                 if len(scr_hlp.d.find_elements_by_xpath("//input[@id='emailid']")) >= 1:
                     break
                 sleep(1)
-        login_script = """
+        login_script = f"""
             username_node = document.querySelector("#emailid");
             if(username_node.offsetParent === null)
                 return false;
             else
-            {
+            {{
                 password_node = document.querySelector("#password");
-                username_node.value = %s;
-                password_node.value = %s;
+                username_node.value = '{username}';
+                password_node.value = '{password}';
                 document.querySelector("#popin-connexion > div > div:nth-child(2) > div > form > button").click();
                 return true;
-            }
-            """% (scr_hlp.user_name,scr_hlp.passwrod)
-        #scr_hlp.print_if_DEBUG("login_script:"+login_script)
+            }}
+            """
+        scr_hlp.print_if_DEBUG("login with:"+login_script)
         return scr_hlp.d.execute_script(login_script)
+    
+    @staticmethod
+    def handle_logout():
+        scr_hlp.print_if_DEBUG("Trying to logout")
+        if scr_hlp.is_element_exists("//*[@class='nav-link nav-link-espace logged']"):
+            scr_hlp.click_element("//a[contains(@onclick,'logout')]")
+            scr_hlp.load_page(scr_hlp.current_page,False)
 
     @staticmethod
     def is_next_page_exists():
@@ -198,13 +226,13 @@ class scr_hlp:
     @staticmethod
     def get_element_text(xpath,driver=None):
         
-        if scr_hlp.is_element_exists(xpath):
-            if driver==None:
-                driver = scr_hlp.d
-                text = scr_hlp.d.execute_script("""node = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath)
-            else:
-                text = scr_hlp.d.execute_script("""node = document.evaluate("%s", arguments[0], null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath,driver)
-            return text
+        # if scr_hlp.is_element_exists(xpath):
+        if driver==None:
+            driver = scr_hlp.d
+            text = scr_hlp.d.execute_script("""node = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath)
+        else:
+            text = scr_hlp.d.execute_script("""node = document.evaluate("%s", arguments[0], null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath,driver)
+        return text
             #return driver.find_element_by_xpath(xpath).text
     
     @staticmethod

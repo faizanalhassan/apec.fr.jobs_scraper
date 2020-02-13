@@ -4,13 +4,14 @@
 from scr_hlp import scr_hlp, sleep, os
 from xlsx_hlp import xlsx_hlp
 from datetime import datetime
+from usernames import users
 
 scr_hlp.DEBUG = True
-scr_hlp.EXTRADEBUG = False #use for pausing on some places
-
+scr_hlp.EXTRADEBUG = True #use for pausing on some places
 scr_hlp.dwnload_dir = "downloads"+datetime.now().strftime("%d%m%y")
-scr_hlp.user_name = "'100158267W'"
-scr_hlp.passwrod = "'Bestshore*05'"
+
+#this should be 800 after some days
+users.visitslimit = 200
 
 xlsx_hlp.folder_name = "files_"+datetime.now().strftime("%d%m%y")
 xlsx_hlp.filename = "extapec_"+datetime.now().strftime("%d%m%y")
@@ -40,7 +41,6 @@ for fonc in Fonctions:
             scr_hlp.click_element("//button[@class='optanon-allow-all accept-cookies-button']")
             
             while True:
-                scr_hlp.pause_if_EXTRADEBUG("Starting job with page_num = %i"%page_num)
                 scr_hlp.load_page(list_page_URL%page_num, wait_ele_xpath="//a[@class='actualLink' and contains(@href,'/detailProfil/')]", ele_count=20)
                 candidates_nodes = scr_hlp.d.find_elements_by_xpath("//a[@class='actualLink' and contains(@href,'/detailProfil/')]")
                 scr_hlp.print_if_DEBUG("Total candidates on this page are: "+str(len(candidates_nodes)))

@@ -128,7 +128,7 @@ class xlsx_hlp:
             for row in range(sheet.nrows):
                 for col in range(sheet.ncols):
                     ws.write(row, col, sheet.cell(row, col).value)
-        scr_hlp.pause_if_EXTRADEBUG("Existing sheet opened")
+        # scr_hlp.pause_if_EXTRADEBUG("Existing sheet opened")
 
 
         

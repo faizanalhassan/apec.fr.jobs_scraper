@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "Scripts\\python",
+    "python.linting.pylintPath": "scripts\\pylint"
+}
