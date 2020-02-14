@@ -20,11 +20,12 @@ class scr_hlp:
     current_page = ""
     proxies = open("proxies.txt", "r").readlines()
     prox_i = 0
-    
+    useproxy = True
+
     @staticmethod
     def pause_if_EXTRADEBUG(pausing_msg):
         if scr_hlp.EXTRADEBUG:
-            input(pausing_msg)
+            input(pausing_msg+" (Press enter to continue...)")
         else:
             scr_hlp.print_if_DEBUG(pausing_msg)
     @staticmethod
@@ -37,7 +38,7 @@ class scr_hlp:
     
     
     @staticmethod
-    def start_chrome(proxy):
+    def start_chrome(proxy=""):
         options = Options()
 #Added from IAO
         if not scr_hlp.EXTRADEBUG:
@@ -45,7 +46,8 @@ class scr_hlp:
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
 #End editing
-        options.add_argument(f'--proxy-server={proxy}')
+        if proxy != "":
+            options.add_argument(f'--proxy-server={proxy}')
         options.add_argument("--window-size=1920,1080")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
@@ -78,7 +80,10 @@ class scr_hlp:
         scr_hlp.close_chrome()
         proxy = scr_hlp.proxies[scr_hlp.prox_i]
         scr_hlp.print_if_DEBUG(f"Applying proxy = {proxy}")
-        scr_hlp.start_chrome(proxy)
+        if scr_hlp.useproxy == True:
+            scr_hlp.start_chrome(proxy)
+        else:
+            scr_hlp.start_chrome()
         scr_hlp.prox_i += 1
         scr_hlp.load_page(url)
         sleep(2)
@@ -107,7 +112,9 @@ class scr_hlp:
     def load_page(url, do_handle_login = True,wait_ele_xpath = "",ele_count = 1, refresh_also = True):
         scr_hlp.print_if_DEBUG("load_page(\nurl=%s,\ndo_handle_login=%r,\nele_count = %i,\nrefresh_also=%r\n)"%(url, do_handle_login,ele_count, refresh_also))
         scr_hlp.wait_until_connected()
+        scr_hlp.print_if_DEBUG("loading start")
         scr_hlp.d.get(url)
+        scr_hlp.print_if_DEBUG("loading complete")
         scr_hlp.current_page = url
         if refresh_also:
             scr_hlp.d.refresh()
@@ -136,9 +143,14 @@ class scr_hlp:
 
             # scr_hlp.load_page(url,False,wait_ele_xpath,ele_count,refresh_also)
         if wait_ele_xpath != "":
-            for _ in range(0,10):
+            for i in range(0,10):
                 if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) >= ele_count:
                     break
+                if i == 9:
+                    ans = input("Waited too long but page is not loading its dynamic contents. Do you want to try load again? (y)")
+                    if ans.lower() == 'y':
+                        scr_hlp.load_page(url, do_handle_login, wait_ele_xpath, ele_count, refresh_also)
+
                 sleep(1)
 
 
@@ -250,7 +262,7 @@ class scr_hlp:
             text = scr_hlp.d.execute_script("""node = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath)
         else:
             text = scr_hlp.d.execute_script("""node = document.evaluate("%s", arguments[0], null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath,driver)
-        return text
+        return text.strip()
             #return driver.find_element_by_xpath(xpath).text
     
     @staticmethod

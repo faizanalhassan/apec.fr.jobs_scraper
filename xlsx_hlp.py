@@ -13,7 +13,7 @@ class xlsx_hlp:
     filename = ""
     current = ""
     ws_main = None
-    headers_main = [ 'id', 'date_maj', 'nb_consult', 'date_der_consult', 'photo_url', 'name', 'poste', 'experience', 'title', 'dispo', 'file_url', 'linkedin_url', 'contact_tel', 'contact_email', 'objectifs', 'souhait_fonctions', 'souhait_salaire', 'souhait_lieux' ]
+    headers_main = ['datasource','profile_url', 'id', 'date_maj', 'nb_consult', 'date_der_consult', 'photo_url', 'name', 'poste', 'experience', 'title', 'dispo', 'file_url', 'file_dd_url', 'linkedin_url', 'contact_tel', 'contact_email', 'objectifs', 'souhait_fonctions', 'souhait_salaire', 'souhait_lieux' ]
     row_num_main = 1
     
     ws_comp = None
@@ -104,22 +104,22 @@ class xlsx_hlp:
 
             elif sheet.name == 'compétences':
                 ws = xlsx_hlp.ws_comp = xlsx_hlp.wb.add_worksheet(sheet.name)
-                xlsx_hlp.row_num_comp = sheet.nrows - 1
+                xlsx_hlp.row_num_comp = sheet.nrows
                 scr_hlp.print_if_DEBUG("%s was having %i rows prevously."%(sheet.name, sheet.nrows-1))
 
             elif sheet.name == 'lang':
                 ws = xlsx_hlp.ws_lang = xlsx_hlp.wb.add_worksheet(sheet.name)
-                xlsx_hlp.row_num_lang = sheet.nrows - 1
+                xlsx_hlp.row_num_lang = sheet.nrows
                 scr_hlp.print_if_DEBUG("%s was having %i rows prevously."%(sheet.name, sheet.nrows-1))
 
             elif sheet.name == 'atouts':
                 ws = xlsx_hlp.ws_atouts = xlsx_hlp.wb.add_worksheet(sheet.name)
-                xlsx_hlp.row_num_atouts = sheet.nrows - 1
+                xlsx_hlp.row_num_atouts = sheet.nrows
                 scr_hlp.print_if_DEBUG("%s was having %i rows prevously."%(sheet.name, sheet.nrows-1))
 
             elif sheet.name == 'nb_moments_cles':
                 ws = xlsx_hlp.ws_nb_moments = xlsx_hlp.wb.add_worksheet(sheet.name)
-                xlsx_hlp.row_num_nb_moments = sheet.nrows - 1
+                xlsx_hlp.row_num_nb_moments = sheet.nrows
                 scr_hlp.print_if_DEBUG("%s was having %i rows prevously."%(sheet.name, sheet.nrows-1))
 
             else:

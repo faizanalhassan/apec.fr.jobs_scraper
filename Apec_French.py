@@ -5,17 +5,18 @@ from scr_hlp import scr_hlp, sleep, os
 from xlsx_hlp import xlsx_hlp
 from datetime import datetime
 from usernames import users
-
-scr_hlp.DEBUG = True
+from database import addtoDB
+scr_hlp.DEBUG = False
 scr_hlp.EXTRADEBUG = True #use for pausing on some places
 scr_hlp.dwnload_dir = "downloads"+datetime.now().strftime("%d%m%y")
+scr_hlp.useproxy = False
 
 #this should be 800 after some days
 users.visitslimit = 200
 
 xlsx_hlp.folder_name = "files_"+datetime.now().strftime("%d%m%y")
 xlsx_hlp.filename = "extapec_"+datetime.now().strftime("%d%m%y")
-
+datasource = "Apec"
 #Filters
 Fonctions= ['&fonctions=101828', '&fonctions=101829', '&fonctions=101830',]
 lieux= ['&lieux=91', '&lieux=77', '&lieux=75',]
@@ -60,10 +61,12 @@ for fonc in Fonctions:
                     id = c_page_URLs[j].split("/")[-1].split("?")[0]
                     photo_url = scr_hlp.handle_download_items(id)
                     row_main = []
-                    row_main.append(c_page_URLs[j].split("/")[-1].split("?")[0]) #id
-                    row_main.append(scr_hlp.get_element_text("//*[contains(text(),'Mis à jour le')]")) #date_maj
-                    row_main.append(scr_hlp.get_element_text("//*[contains(text(),'Profil consulté')]")) #nb_consult
-                    row_main.append(scr_hlp.get_element_text("//*[contains(text(),'Dernière consultation')]")) #date_der
+                    row_main.append(datasource) #datasource
+                    row_main.append(c_page_URLs[j]) #profile_link
+                    row_main.append(id) #id
+                    row_main.append(scr_hlp.get_element_text("//*[contains(text(),'Mis à jour le')]").replace("Mis à jour le","").strip()) #date_maj
+                    row_main.append(scr_hlp.get_element_text("//*[contains(text(),'Profil consulté')]").replace("Profil consulté","").replace("fois","").strip()) #nb_consult
+                    row_main.append(scr_hlp.get_element_text("//*[contains(text(),'Dernière consultation')]").replace("Dernière consultation :","").strip()) #date_der
                     row_main.append(photo_url) #photo_url
                     row_main.append(scr_hlp.get_element_text("//*[@id='name']")) #name
                     row_main.append(scr_hlp.get_element_text("//*[@id='poste']")) #poste
@@ -71,6 +74,7 @@ for fonc in Fonctions:
                     row_main.append(scr_hlp.get_element_text("//*[@id='title']")) #title
                     row_main.append(scr_hlp.get_element_text("//*[@id='dispo']")) #dispo
                     row_main.append(scr_hlp.get_element_attr("//*[contains(@class,'cv-profil')]/a[contains(@href,'filename')]","href")) #file url
+                    row_main.append(scr_hlp.get_element_attr("//*[contains(@class,'picto-print') and contains(@href,'download')]","href")) #file_dd_url
                     row_main.append(scr_hlp.get_element_attr("//*[contains(@id,'linkedin-icon')]/parent::a","href")) #linkedin url
                     row_main.append(scr_hlp.get_element_text("//*[contains(@class,'cv-contact-profil')]//a[contains(@href,'tel:')]")) #tell
                     row_main.append(scr_hlp.get_element_text("//*[contains(@class,'cv-contact-profil')]//a[contains(@href,'mailto:')]")) #mail
@@ -83,6 +87,8 @@ for fonc in Fonctions:
                     for k in range(0,len(row_main)):
                         xlsx_hlp.ws_main.write(xlsx_hlp.row_num_main,k,row_main[k])
                     xlsx_hlp.row_num_main += 1
+                    addtoDB(xlsx_hlp.headers_main,row_main,"main")
+
 
                     scr_hlp.click_element("//section[contains(@class,'section-competences')]/*[contains(text(),'Voir les autres compétences (1)')]")
                     comp_eles = scr_hlp.d.find_elements_by_xpath("//*[@class='competence-name' and ./parent::div/following-sibling::div[@class='col-md-8']]/parent::div/parent::div")
@@ -102,6 +108,7 @@ for fonc in Fonctions:
                         for l in range(0, len(row_comp)):
                             xlsx_hlp.ws_comp.write(xlsx_hlp.row_num_comp,l,row_comp[l])
                         xlsx_hlp.row_num_comp += 1
+                        addtoDB(xlsx_hlp.headers_comp,row_comp,"compétences")
 
                     lang_eles = scr_hlp.d.find_elements_by_xpath("//*[@class='competence-name' and not(./parent::div/following-sibling::div[@class='col-md-8'])]/parent::div")
                     for e in lang_eles:
@@ -119,9 +126,9 @@ for fonc in Fonctions:
                         for l in range(0, len(row_lang)):
                             xlsx_hlp.ws_lang.write(xlsx_hlp.row_num_lang,l,row_lang[l])
                         xlsx_hlp.row_num_lang += 1
-        
+                        addtoDB(xlsx_hlp.headers_lang,row_lang,"lang")
 
-                    for e in scr_hlp.d.find_elements_by_xpath("//*[contains(@class,'list-atouts')]"):
+                    for e in scr_hlp.d.find_elements_by_xpath("//*[contains(@class,'list-atouts')]/p"):
                         row_atouts = []
                         row_atouts.append(id)
                         row_atouts.append(e.text)
@@ -129,18 +136,19 @@ for fonc in Fonctions:
                         for l in range(0, len(row_atouts)):
                             xlsx_hlp.ws_atouts.write(xlsx_hlp.row_num_atouts,l,row_atouts[l])
                         xlsx_hlp.row_num_atouts += 1
+                        addtoDB(xlsx_hlp.headers_atouts,row_atouts,"atouts")
 
                     count = 0
                     for e in scr_hlp.d.find_elements_by_xpath("//section[contains(@class,'section-moments')]//ngu-tile"):
                         if(count > 0 and count%3 == 0):
                             scr_hlp.click_element("//button[@class='slick-next hidden-xs']")
                         count += 1
-                        dd_df = e.find_element_by_xpath(".//h4[contains(@class,'date')]").text.split("à")
+                        dd_df = e.find_element_by_xpath(".//h4[contains(@class,'date')]").text.replace("De","").split("à")
                         row_nb_mom = []
                         row_nb_mom.append(id)
-                        row_nb_mom.append(dd_df[0]) #dd
+                        row_nb_mom.append(dd_df[0].strip()) #dd
                         if len(dd_df) > 1:
-                            row_nb_mom.append(dd_df[1]) #df
+                            row_nb_mom.append(dd_df[1].strip()) #df
                         else:
                             row_nb_mom.append('') #df
                         row_nb_mom.append(scr_hlp.get_element_text(".//p[contains(@class,'moment-upper')]", e)) #type
@@ -153,8 +161,11 @@ for fonc in Fonctions:
                         for l in range(0, len(row_nb_mom)):
                             xlsx_hlp.ws_nb_moments.write(xlsx_hlp.row_num_nb_moments,l,row_nb_mom[l])
                         xlsx_hlp.row_num_nb_moments += 1
-                 
-                xlsx_hlp.save_wb()#saves after a page
+                        addtoDB(xlsx_hlp.headers_nb_moments,row_nb_mom,"nb_moments_cles")
+
+                    xlsx_hlp.save_wb() # delete if slow speed and uncomment below save_wb()
+                    scr_hlp.pause_if_EXTRADEBUG("Data is being saved after each profile visit")
+                # xlsx_hlp.save_wb()#saves after a page
                 scr_hlp.pause_if_EXTRADEBUG("Going to add page")
                 if not is_next_exists:
                     break

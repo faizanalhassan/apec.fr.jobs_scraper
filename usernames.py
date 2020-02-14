@@ -43,9 +43,12 @@ class users:
             scr_hlp.scr_hlp.print_if_DEBUG(f"This user has reached its limit. Total visits {totalvisits}. Trying other user.")
             # scr_hlp.scr_hlp.handle_logout()
             users.rownum += 1
-            # return users.get_credentials()
-            scr_hlp.scr_hlp.initialize_browser_setup()
-            raise Exception("No need to continue the caller function.")
+            if scr_hlp.scr_hlp.useproxy:
+                scr_hlp.scr_hlp.initialize_browser_setup()
+                raise Exception("No need to continue the caller function.")
+            else:
+                return users.get_credentials()
+
 
         for row in range(sheet.nrows):
             for col in range(sheet.ncols):
