@@ -8,7 +8,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from selenium.webdriver.common.action_chains import ActionChains
 import urllib.request, os, shutil, sys
-from usernames import users
+from usernames import Users, CustomException
 from time import sleep
 
 
@@ -18,7 +18,8 @@ class scr_hlp:
     d = None
     dwnload_dir = ""
     current_page = ""
-    proxies = open("proxies.txt", "r").readlines()
+    proxies = ['51.158.114.177:8811', '163.172.146.119:8811', '51.158.123.250:8811',
+               '163.172.180.18:8811', '51.158.78.107:8811', '51.38.34.40:3128']
     prox_i = 0
     useproxy = True
 
@@ -28,25 +29,28 @@ class scr_hlp:
             input(pausing_msg+" (Press enter to continue...)")
         else:
             scr_hlp.print_if_DEBUG(pausing_msg)
+
     @staticmethod
     def print_if_DEBUG(log):
         if scr_hlp.DEBUG:
             print(log)
+
     @staticmethod
     def get_dwnload_dir_path():
-        return os.path.join(os.path.dirname(os.path.abspath(__file__)),scr_hlp.dwnload_dir)
-    
-    
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), scr_hlp.dwnload_dir)
+
     @staticmethod
     def start_chrome(proxy=""):
         options = Options()
-#Added from IAO
+
+        # Added from IAO
         if not scr_hlp.EXTRADEBUG:
             options.add_argument('--headless')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-#End editing
+        # End editing
         if proxy != "":
+            scr_hlp.print_if_DEBUG(f"using proxy for chrome = {proxy}")
             options.add_argument(f'--proxy-server={proxy}')
         options.add_argument("--window-size=1920,1080")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -58,12 +62,13 @@ class scr_hlp:
             "download.directory_upgrade": True,
             "safebrowsing.enabled": True
         })
-        params = {'behavior': 'allow', 'downloadPath':scr_hlp.get_dwnload_dir_path() }
+        params = {'behavior': 'allow', 'downloadPath': scr_hlp.get_dwnload_dir_path()}
         
-        scr_hlp.d = webdriver.Chrome(executable_path="chromedriver",options=options)
+        scr_hlp.d = webdriver.Chrome(options=options)
         scr_hlp.d.set_page_load_timeout = 60
         
         scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
+
     @staticmethod
     def close_chrome():
         try:
@@ -74,13 +79,13 @@ class scr_hlp:
             scr_hlp.d = None
     
     @staticmethod
-    def initialize_browser_setup(url = ""):
+    def initialize_browser_setup(url=""):
         if url == "":
             url = scr_hlp.current_page
         scr_hlp.close_chrome()
         proxy = scr_hlp.proxies[scr_hlp.prox_i]
         scr_hlp.print_if_DEBUG(f"Applying proxy = {proxy}")
-        if scr_hlp.useproxy == True:
+        if scr_hlp.useproxy:
             scr_hlp.start_chrome(proxy)
         else:
             scr_hlp.start_chrome()
@@ -91,14 +96,15 @@ class scr_hlp:
 
     @staticmethod
     def is_internet_connected():
-            try:
-                scr_hlp.print_if_DEBUG("checking connection")
-                urllib.request.urlopen('http://google.com')
-                scr_hlp.print_if_DEBUG("Connected")
-                return True
-            except:
-                print("Conecction Error")
-                return False
+
+        try:
+            scr_hlp.print_if_DEBUG("checking connection")
+            urllib.request.urlopen('http://google.com')
+            scr_hlp.print_if_DEBUG("Connected")
+            return True
+        except:
+            print("Connection Error")
+            return False
 
     @staticmethod
     def wait_until_connected():
@@ -109,8 +115,10 @@ class scr_hlp:
                 print("Trying again to connect.")
 
     @staticmethod
-    def load_page(url, do_handle_login = True,wait_ele_xpath = "",ele_count = 1, refresh_also = True):
-        scr_hlp.print_if_DEBUG("load_page(\nurl=%s,\ndo_handle_login=%r,\nele_count = %i,\nrefresh_also=%r\n)"%(url, do_handle_login,ele_count, refresh_also))
+    def load_page(url, do_handle_login=True, wait_ele_xpath="", ele_count=1, refresh_also=True, count_visit=False):
+        scr_hlp.print_if_DEBUG(f"load_page(url={url}, do_handle_login={do_handle_login},"
+                               f" wait_ele_xpath={wait_ele_xpath}, ele_count={ele_count},"
+                               f" refresh_also={refresh_also}, count_visit={count_visit})")
         scr_hlp.wait_until_connected()
         scr_hlp.print_if_DEBUG("loading start")
         scr_hlp.d.get(url)
@@ -121,38 +129,40 @@ class scr_hlp:
         
         if do_handle_login:
             try:
-                username, password = users.get_credentials()
+                username, password = Users.get_credentials(count_visit)
                 # scr_hlp.pause_if_EXTRADEBUG("Login check")
                 while scr_hlp.handle_login(username, password):
                     # scr_hlp.pause_if_EXTRADEBUG("Tried to login")
                     sleep(3)
-                    if scr_hlp.is_element_exists("//*[contains(text(),'Votre identifiant ou votre mot de passe est incorrect.') and not(contains(@class,'alert-d-none'))]"):
+                    if scr_hlp.is_element_exists("//*[contains(text(),"
+                                                 "'Votre identifiant ou votre mot de passe est incorrect.')"
+                                                 " and not(contains(@class,'alert-d-none'))]"):
                         command = input(f"Webpage is saying that your credentials are wrong.\n\
-                        Recheck the credentials listed in row num {users.rownum} and enter y to continue: ")
+                        Recheck the credentials listed in row num {Users.row_num} and enter y to continue: ")
                         if command.lower() != 'y':
                             scr_hlp.d.quit()
                             sys.exit()
                         else:
                             scr_hlp.d.refresh()
-                            username, password = users.get_credentials()
+                            username, password = Users.get_credentials(count_visit)
                     else:
                         scr_hlp.print_if_DEBUG("Login success")
                         break 
-            except:
-                scr_hlp.print_if_DEBUG("\t\tMy Custom Exception: Browser reopned")
+            except CustomException as ce:
+                scr_hlp.print_if_DEBUG("\t\tMy Custom Exception: Browser reopned "+str(ce))
 
             # scr_hlp.load_page(url,False,wait_ele_xpath,ele_count,refresh_also)
         if wait_ele_xpath != "":
-            for i in range(0,10):
+            for i in range(0, 10):
                 if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) >= ele_count:
                     break
                 if i == 9:
-                    ans = input("Waited too long but page is not loading its dynamic contents. Do you want to try load again? (y)")
+                    ans = input("Waited too long but page is not loading its dynamic contents."
+                                " Do you want to try load again? (y)")
                     if ans.lower() == 'y':
-                        scr_hlp.load_page(url, do_handle_login, wait_ele_xpath, ele_count, refresh_also)
+                        scr_hlp.load_page(url, do_handle_login, wait_ele_xpath, ele_count, refresh_also, count_visit)
 
                 sleep(1)
-
 
     @staticmethod
     def handle_login(username, password):

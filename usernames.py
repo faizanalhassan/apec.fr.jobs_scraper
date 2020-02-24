@@ -1,67 +1,79 @@
-import xlrd, sys, xlsxwriter
-from datetime import datetime
+from datetime import datetime, timedelta
+from time import sleep
+
+import xlrd
+import xlsxwriter
+
 import scr_hlp
 
-class users:
-    rownum = 1
+
+class CustomException(Exception):
+    pass
+
+
+class Users:
+    row_num = 1
+    proxy_row_num = 1
     filename = "usernames.xlsx"
     wb = None
     ws = None
-    headers = ["username","password","totalvisits"]
+    headers = ["username", "password", "totalvisits"]
     visitslimit = 200
-    
+
     @staticmethod
-    def open_username_file():
-        scr_hlp.scr_hlp.print_if_DEBUG("Opening %s"%users.filename)
-        # users.usersFile = xlrd.open_workbook(users.filename)
-    
-    @staticmethod
-    def get_credentials():
-        fname = users.filename
-        scr_hlp.scr_hlp.print_if_DEBUG("Opening an existing sheet named = %s"%fname)
-        wbRD = xlrd.open_workbook(fname)
+    def get_credentials(count_visit):
+        wait = False
+        filename = Users.filename
+        scr_hlp.scr_hlp.print_if_DEBUG("Opening an existing sheet named = %s" % filename)
+        wbRD = xlrd.open_workbook(filename)
         sheet = wbRD.sheets()[0]
-        
-        users.wb = xlsxwriter.Workbook(fname)
-        ws = users.ws = users.wb.add_worksheet(sheet.name)
-        if not users.rownum < sheet.nrows:
-            print("All Usernames' limit is over. No more usernames are available.\nProgram exiting...")
-            sys.exit()
-        lastvisit = sheet.cell(users.rownum,3).value
-        if lastvisit != "" and datetime.strptime(lastvisit,"%Y-%m-%d").date() == datetime.now().date():
-            totalvisits = int(sheet.cell(users.rownum,2).value)
-            # lastvisit = datetime.now().date()
+
+        Users.wb = xlsxwriter.Workbook(filename)
+        ws = Users.ws = Users.wb.add_worksheet(sheet.name)
+        if not Users.row_num < sheet.nrows:
+            wait = True
+            Users.row_num = 1
+
+        lastvisit = sheet.cell(Users.row_num, 3).value
+        time_diff = (datetime.strptime(lastvisit, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=1)) - datetime.now()
+        scr_hlp.scr_hlp.pause_if_EXTRADEBUG(f"{datetime.now()}"
+                                            f" - ({datetime.strptime(lastvisit, '%Y-%m-%d %H:%M:%S.%f')}"
+                                            f" + {timedelta(days=1)})"
+                                            f"""{datetime.now() - 
+                                                 (datetime.strptime(lastvisit, '%Y-%m-%d %H:%M:%S.%f') 
+                                                  + timedelta(days=1))}""")
+
+        if lastvisit != "" and time_diff.days == 0:
+            if wait:
+                print(f"All users reached to their limits. Applied wait for {time_diff.total_seconds()} seconds."
+                      f"\nShould be end at {datetime.now() + time_diff}")
+                sleep(time_diff.total_seconds())
+                totalvisits = 0
+            else:
+                totalvisits = int(sheet.cell(Users.row_num, 2).value)
         else:
             totalvisits = 0
-            # lastvisit = datetime.strptime(lastvisit,"%Y-%m-%d").date()
-        # if lastvisit < datetime.now().date():
-        #     totalvisits = 0
-        # else:   
-        #     totalvisits = int(sheet.cell(users.rownum,2).value)
-        
-        if not totalvisits < users.visitslimit:
-            scr_hlp.scr_hlp.print_if_DEBUG(f"This user has reached its limit. Total visits {totalvisits}. Trying other user.")
-            # scr_hlp.scr_hlp.handle_logout()
-            users.rownum += 1
+        if not totalvisits < Users.visitslimit:
+            scr_hlp.scr_hlp.print_if_DEBUG(
+                f"This user has reached its limit. Total visits {totalvisits}. Trying other user.")
+            Users.row_num += 1
             if scr_hlp.scr_hlp.useproxy:
                 scr_hlp.scr_hlp.initialize_browser_setup()
-                raise Exception("No need to continue the caller function.")
+                raise CustomException("No need to continue the caller function.")
             else:
-                return users.get_credentials()
-
+                return Users.get_credentials(count_visit)
 
         for row in range(sheet.nrows):
             for col in range(sheet.ncols):
                 ws.write(row, col, sheet.cell(row, col).value)
-
-        ws.write(users.rownum,2,totalvisits+1)
-        ws.write(users.rownum,3,str(datetime.now().date()))
-        users.wb.close()
-        uname = sheet.cell(users.rownum,0).value
-        passw =sheet.cell(users.rownum,1).value
-        scr_hlp.scr_hlp.print_if_DEBUG(f"Username = {uname}\t pass = {passw}\t total visits = {totalvisits+1}")
-        return uname,passw
-
-
-
-
+        if count_visit:
+            ws.write(Users.row_num, 2, totalvisits + 1)
+            ws.write(Users.row_num, 3, str(datetime.now()))
+        else:
+            ws.write(Users.row_num, 2, totalvisits)
+            ws.write(Users.row_num, 3, lastvisit)
+        Users.wb.close()
+        uname = sheet.cell(Users.row_num, 0).value
+        passw = sheet.cell(Users.row_num, 1).value
+        scr_hlp.scr_hlp.pause_if_EXTRADEBUG(f"Username = {uname}\t pass = {passw}\t total visits = {totalvisits + 1}")
+        return uname, passw

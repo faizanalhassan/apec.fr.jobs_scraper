@@ -4,42 +4,62 @@
 from scr_hlp import scr_hlp, sleep, os
 from xlsx_hlp import xlsx_hlp
 from datetime import datetime
-from usernames import users
+from usernames import Users
 from database import addtoDB
-scr_hlp.DEBUG = False
-scr_hlp.EXTRADEBUG = True #use for pausing on some places
+scr_hlp.DEBUG = True
+scr_hlp.EXTRADEBUG = True  # use for pausing on some places
 scr_hlp.dwnload_dir = "downloads"+datetime.now().strftime("%d%m%y")
 scr_hlp.useproxy = False
 
-#this should be 800 after some days
-users.visitslimit = 200
+# this should be 800 after some days
+Users.visitslimit = 200
 
-xlsx_hlp.folder_name = "files_"+datetime.now().strftime("%d%m%y")
+xlsx_hlp.folder_name = "xlsx_files"
 xlsx_hlp.filename = "extapec_"+datetime.now().strftime("%d%m%y")
 datasource = "Apec"
-#Filters
+# Filters
 Fonctions= ['&fonctions=101828', '&fonctions=101829', '&fonctions=101830',]
 lieux= ['&lieux=91', '&lieux=77', '&lieux=75',]
 secteursActivite= ['&secteursActivite=101753', '&secteursActivite=101755','&secteursActivite=101757',]
 
 list_page_URL = "https://www.apec.fr/recruteur/mon-espace/candidapec.html#/rechercheNormale?page=%s"
 
+Program_File = "program_data"
+
 if not os.path.isdir(scr_hlp.get_dwnload_dir_path()):
     os.mkdir(scr_hlp.get_dwnload_dir_path())
     scr_hlp.pause_if_EXTRADEBUG("Download dir created")
 
 
+def get_last_page():
+    if not os.path.isfile(Program_File):
+        return 0
+    f = open(Program_File, "r")
+    page = int(f.readline())
+    scr_hlp.pause_if_EXTRADEBUG(f"Got Last Page = {page}")
+    f.close()
+    return page
+
+
+def save_last_page(page):
+    f = open(Program_File, "w")
+    f.write(str(page))
+    f.close()
+
 
 for fonc in Fonctions:
     for loc in lieux:
         for sec in secteursActivite:
-            page_num = 0
+            page_num = get_last_page()
             list_page_URL = list_page_URL + fonc + loc + sec
-            xlsx_hlp.create_wb(fonc + loc + sec)
+            xlsx_hlp.create_wb()
             scr_hlp.initialize_browser_setup(list_page_URL)
             
             while True:
-                scr_hlp.load_page(list_page_URL%page_num, wait_ele_xpath="//a[@class='actualLink' and contains(@href,'/detailProfil/')]", ele_count=20)
+                save_last_page(page_num)
+                scr_hlp.load_page(list_page_URL % page_num,
+                                  wait_ele_xpath="//a[@class='actualLink' and contains(@href,'/detailProfil/')]",
+                                  ele_count=20)
                 candidates_nodes = scr_hlp.d.find_elements_by_xpath("//a[@class='actualLink' and contains(@href,'/detailProfil/')]")
                 scr_hlp.print_if_DEBUG("Total candidates on this page are: "+str(len(candidates_nodes)))
                 is_next_exists = scr_hlp.is_next_page_exists()
