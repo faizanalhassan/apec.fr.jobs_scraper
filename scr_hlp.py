@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # coding=UTF-8
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.expected_conditions import presence_of_element_located
-from selenium.webdriver.common.action_chains import ActionChains
-import urllib.request, os, shutil, sys
-from usernames import Users, CustomException
+import os
+import shutil
+import sys
+import urllib.request
 from time import sleep
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
+from usernames import Users, CustomException
 
 
 class scr_hlp:
@@ -17,16 +18,16 @@ class scr_hlp:
     EXTRADEBUG = False
     d = None
     dwnload_dir = ""
-    current_page = ""
     proxies = ['51.158.114.177:8811', '163.172.146.119:8811', '51.158.123.250:8811',
                '163.172.180.18:8811', '51.158.78.107:8811', '51.38.34.40:3128']
     prox_i = 0
     useproxy = True
+    list_page_URL = ""
 
     @staticmethod
     def pause_if_EXTRADEBUG(pausing_msg):
         if scr_hlp.EXTRADEBUG:
-            input(pausing_msg+" (Press enter to continue...)")
+            input(pausing_msg + " (Press enter to continue...)")
         else:
             scr_hlp.print_if_DEBUG(pausing_msg)
 
@@ -63,10 +64,10 @@ class scr_hlp:
             "safebrowsing.enabled": True
         })
         params = {'behavior': 'allow', 'downloadPath': scr_hlp.get_dwnload_dir_path()}
-        
+
         scr_hlp.d = webdriver.Chrome(options=options)
         scr_hlp.d.set_page_load_timeout = 60
-        
+
         scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
 
     @staticmethod
@@ -77,11 +78,9 @@ class scr_hlp:
             pass
         finally:
             scr_hlp.d = None
-    
+
     @staticmethod
-    def initialize_browser_setup(url=""):
-        if url == "":
-            url = scr_hlp.current_page
+    def initialize_browser_setup():
         scr_hlp.close_chrome()
         proxy = scr_hlp.proxies[scr_hlp.prox_i]
         scr_hlp.print_if_DEBUG(f"Applying proxy = {proxy}")
@@ -90,7 +89,7 @@ class scr_hlp:
         else:
             scr_hlp.start_chrome()
         scr_hlp.prox_i += 1
-        scr_hlp.load_page(url)
+        scr_hlp.load_page(scr_hlp.list_page_URL, count_visit=False, do_handle_login=False)
         sleep(2)
         scr_hlp.click_element("//button[@class='optanon-allow-all accept-cookies-button']")
 
@@ -115,7 +114,7 @@ class scr_hlp:
                 print("Trying again to connect.")
 
     @staticmethod
-    def load_page(url, do_handle_login=True, wait_ele_xpath="", ele_count=1, refresh_also=True, count_visit=False):
+    def load_page(url, count_visit, do_handle_login=True, wait_ele_xpath="", ele_count=1, refresh_also=True):
         scr_hlp.print_if_DEBUG(f"load_page(url={url}, do_handle_login={do_handle_login},"
                                f" wait_ele_xpath={wait_ele_xpath}, ele_count={ele_count},"
                                f" refresh_also={refresh_also}, count_visit={count_visit})")
@@ -123,10 +122,9 @@ class scr_hlp:
         scr_hlp.print_if_DEBUG("loading start")
         scr_hlp.d.get(url)
         scr_hlp.print_if_DEBUG("loading complete")
-        scr_hlp.current_page = url
         if refresh_also:
             scr_hlp.d.refresh()
-        
+
         if do_handle_login:
             try:
                 username, password = Users.get_credentials(count_visit)
@@ -137,8 +135,9 @@ class scr_hlp:
                     if scr_hlp.is_element_exists("//*[contains(text(),"
                                                  "'Votre identifiant ou votre mot de passe est incorrect.')"
                                                  " and not(contains(@class,'alert-d-none'))]"):
-                        command = input(f"Webpage is saying that your credentials are wrong.\n\
-                        Recheck the credentials listed in row num {Users.row_num} and enter y to continue: ")
+                        command = input(f"Webpage is saying that your credentials are wrong.\n"
+                                        f"Recheck the credentials username={username}, password={password}"
+                                        f" listed in row num {Users.row_num} and enter y to continue: ")
                         if command.lower() != 'y':
                             scr_hlp.d.quit()
                             sys.exit()
@@ -147,11 +146,13 @@ class scr_hlp:
                             username, password = Users.get_credentials(count_visit)
                     else:
                         scr_hlp.print_if_DEBUG("Login success")
-                        break 
+                        break
             except CustomException as ce:
-                scr_hlp.print_if_DEBUG("\t\tMy Custom Exception: Browser reopned "+str(ce))
+                scr_hlp.print_if_DEBUG("\t\tMy Custom Exception: Browser reopened " + str(ce))
+                scr_hlp.load_page(url=url, count_visit=count_visit, do_handle_login=do_handle_login,
+                                  wait_ele_xpath=wait_ele_xpath, ele_count=ele_count, refresh_also=refresh_also)
+                return
 
-            # scr_hlp.load_page(url,False,wait_ele_xpath,ele_count,refresh_also)
         if wait_ele_xpath != "":
             for i in range(0, 10):
                 if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) >= ele_count:
@@ -160,16 +161,17 @@ class scr_hlp:
                     ans = input("Waited too long but page is not loading its dynamic contents."
                                 " Do you want to try load again? (y)")
                     if ans.lower() == 'y':
-                        scr_hlp.load_page(url, do_handle_login, wait_ele_xpath, ele_count, refresh_also, count_visit)
+                        scr_hlp.load_page(url=url, count_visit=count_visit, do_handle_login=do_handle_login,
+                                          wait_ele_xpath=wait_ele_xpath, ele_count=ele_count, refresh_also=refresh_also)
 
                 sleep(1)
 
     @staticmethod
     def handle_login(username, password):
         while True:
-                if len(scr_hlp.d.find_elements_by_xpath("//input[@id='emailid']")) >= 1:
-                    break
-                sleep(1)
+            if len(scr_hlp.d.find_elements_by_xpath("//input[@id='emailid']")) >= 1:
+                break
+            sleep(1)
         login_script = f"""
             username_node = document.querySelector("#emailid");
             if(username_node.offsetParent === null)
@@ -183,20 +185,22 @@ class scr_hlp:
                 return true;
             }}
             """
-        scr_hlp.print_if_DEBUG("login with:"+login_script)
+        scr_hlp.print_if_DEBUG("login with:" + login_script)
         return scr_hlp.d.execute_script(login_script)
-    
+
     @staticmethod
     def handle_logout():
         scr_hlp.print_if_DEBUG("Trying to logout")
+        url = scr_hlp.d.current_url
         if scr_hlp.is_element_exists("//*[@class='nav-link nav-link-espace logged']"):
             scr_hlp.click_element("//a[contains(@onclick,'logout')]")
-            scr_hlp.load_page(scr_hlp.current_page,False)
+            scr_hlp.load_page(url, False, do_handle_login=False)
 
     @staticmethod
     def is_next_page_exists():
         next_page_script = """
-        nextpage = document.evaluate("//ul[contains(@class,'pagination')]/li/a[contains(text(),'Suiv.')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+        nextpage = document.evaluate("//ul[contains(@class,'pagination')]/li/a[contains(text(),'Suiv.')]",
+         document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
         if(nextpage)
         {
            return true;
@@ -207,33 +211,35 @@ class scr_hlp:
         }
         """
         result = scr_hlp.d.execute_script(next_page_script)
-        scr_hlp.print_if_DEBUG("next_page_script result: "+str(result))
+        scr_hlp.print_if_DEBUG("next_page_script result: " + str(result))
         return scr_hlp.d.execute_script(next_page_script)
 
     @staticmethod
-    def handle_download_items(id):
+    def handle_download_items(profile_id):
         photo_url = ""
-        
+
         scr_hlp.click_element("//button[contains(text(),'Autres actions')]")
-        pdf_link = scr_hlp.d.find_element_by_xpath("//button[contains(text(),'Autres actions')]//following-sibling::div/a[contains(text(),'Exporter')]").get_attribute("href")
-        params = {'behavior': 'allow', 'downloadPath':os.path.join(scr_hlp.get_dwnload_dir_path(),id) }
+        pdf_link = scr_hlp.d.find_element_by_xpath("//button[contains(text(),'Autres actions')]//following-sibling"
+                                                   "::div/a[contains(text(),'Exporter')]").get_attribute("href")
+        params = {'behavior': 'allow', 'downloadPath': os.path.join(scr_hlp.get_dwnload_dir_path(), profile_id)}
         scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
         current_page = scr_hlp.d.current_url
-        scr_hlp.load_page(pdf_link, refresh_also=False)
-        scr_hlp.load_page(current_page,wait_ele_xpath="//*[contains(@id,'photo-profil')]/img")
-        #scr_hlp.click_element("//button[contains(text(),'Autres actions')]//following-sibling::div/a[contains(text(),'Exporter')]")
+        scr_hlp.load_page(pdf_link, count_visit=False, refresh_also=False)
+        scr_hlp.load_page(current_page, count_visit=False, wait_ele_xpath="//*[contains(@id,'photo-profil')]/img")
+        # scr_hlp.click_element("//button[contains(text(),'Autres actions')]
+        # //following-sibling::div/a[contains(text(),'Exporter')]")
         try:
-            if len(scr_hlp.d.find_elements_by_xpath("//*[contains(@id,'photo-profil')]/img[contains(@src,'no-photo.png')]")) == 0:
-                photo_url = scr_hlp.d.find_element_by_xpath("//*[contains(@id,'photo-profil')]/img").get_attribute("src")
-                photo_filename = os.path.join(scr_hlp.get_dwnload_dir_path(),id,photo_url.split("/")[-1])
+            if len(scr_hlp.d.find_elements_by_xpath("//*[contains(@id,'photo-profil')]"
+                                                    "/img[contains(@src,'no-photo.png')]")) == 0:
+                photo_url = scr_hlp.d.find_element_by_xpath("//*[contains(@id,'photo-profil')]/img") \
+                    .get_attribute("src")
+                photo_filename = os.path.join(scr_hlp.get_dwnload_dir_path(), profile_id, photo_url.split("/")[-1])
                 scr_hlp.print_if_DEBUG(photo_filename)
-                urllib.request.urlretrieve(photo_url,photo_filename)
-        except :
+                urllib.request.urlretrieve(photo_url, photo_filename)
+        except:
             pass
-        #input("Wait download test")#remove
+        # input("Wait download test")#remove
         return photo_url
-
-    
 
     @staticmethod
     def add_prefix_to_filename(prefix, time_to_wait=60):
@@ -243,7 +249,9 @@ class scr_hlp:
             pass
         while True:
             try:
-                filename = max([f for f in os.listdir(folder_of_download)], key=lambda xa :   os.path.getctime(os.path.join(folder_of_download,xa)))
+                filename = max(
+                    [f for f in os.listdir(folder_of_download)],
+                    key=lambda xa: os.path.getctime(os.path.join(folder_of_download, xa)))
                 break
 
             except:
@@ -252,29 +260,33 @@ class scr_hlp:
             sleep(1)
             time_counter += 1
             if time_counter > time_to_wait:
-                #raise Exception('Waited too long for file to download')
+                # raise Exception('Waited too long for file to download')
                 scr_hlp.pause_if_EXTRADEBUG("Waited for file to download for 60 sec. Prefix is not added.")
                 return
-        filename = max([f for f in os.listdir(folder_of_download)], key=lambda xa :   os.path.getctime(os.path.join(folder_of_download,xa)))
+        filename = max([f for f in os.listdir(folder_of_download)],
+                       key=lambda xa: os.path.getctime(os.path.join(folder_of_download, xa)))
         try:
-            shutil.move(os.path.join(folder_of_download, filename), os.path.join(scr_hlp.get_dwnload_dir_path(), prefix+"_"+filename))
-            scr_hlp.pause_if_EXTRADEBUG("prefix %s added to download file"%id)
+            shutil.move(os.path.join(folder_of_download, filename),
+                        os.path.join(scr_hlp.get_dwnload_dir_path(), prefix + "_" + filename))
+            scr_hlp.pause_if_EXTRADEBUG("prefix %s added to download file" % id)
         except:
-            scr_hlp.pause_if_EXTRADEBUG("prefix %s couldn't added to download file"%id)
+            scr_hlp.pause_if_EXTRADEBUG("prefix %s couldn't added to download file" % id)
             pass
 
     @staticmethod
-    def get_element_text(xpath,driver=None):
-        
+    def get_element_text(xpath, driver=None):
+
         # if scr_hlp.is_element_exists(xpath):
-        if driver==None:
-            driver = scr_hlp.d
-            text = scr_hlp.d.execute_script("""node = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath)
+        if driver is None:
+            text = scr_hlp.d.execute_script(
+                """node = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';""" % xpath)
         else:
-            text = scr_hlp.d.execute_script("""node = document.evaluate("%s", arguments[0], null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';"""%xpath,driver)
+            text = scr_hlp.d.execute_script(
+                """node = document.evaluate("%s", arguments[0], null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;return node != null?node.innerText:'';""" % xpath,
+                driver)
         return text.strip()
-            #return driver.find_element_by_xpath(xpath).text
-    
+        # return driver.find_element_by_xpath(xpath).text
+
     @staticmethod
     def get_element(xpath):
         if scr_hlp.is_element_exists(xpath):
@@ -293,8 +305,9 @@ class scr_hlp:
     @staticmethod
     def click_element(xpath):
         if scr_hlp.is_element_exists(xpath):
-            scr_hlp.print_if_DEBUG("Clicking %s"%xpath)
-            scr_hlp.d.execute_script("""var n = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;n.scrollIntoView();n.click()"""%xpath)
+            scr_hlp.print_if_DEBUG("Clicking %s" % xpath)
+            scr_hlp.d.execute_script(
+                """var n = document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;n.scrollIntoView();n.click()""" % xpath)
             scr_hlp.print_if_DEBUG("Clicking Complete")
             sleep(1)
             return True
@@ -304,6 +317,6 @@ class scr_hlp:
     def get_element_attr(xpath, attr):
         value = ""
         if scr_hlp.is_element_exists(xpath):
-            value = scr_hlp.d.execute_script("""return document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue.getAttribute("%s");"""%(xpath, attr))   
-        return value if value != None else ""
-
+            value = scr_hlp.d.execute_script(
+                """return document.evaluate("%s", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue.getAttribute("%s");""" % (xpath, attr))
+        return value if value is not None else ""
