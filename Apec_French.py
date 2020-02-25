@@ -8,7 +8,7 @@ from usernames import Users
 from database import addtoDB
 
 scr_hlp.DEBUG = True
-scr_hlp.EXTRADEBUG = True  # use for pausing on some places
+scr_hlp.EXTRADEBUG = False  # use for pausing on some places
 scr_hlp.dwnload_dir = "downloads" + datetime.now().strftime("%d%m%y")
 scr_hlp.useproxy = False
 
@@ -162,7 +162,7 @@ for fonc in Fonctions:
                             ".//*[@class='competence-name']/following-sibling::div[contains(@class,'stars')]/*")
                         total_stars = 0
                         for se in stars_eles:
-                            if ("xstar-yellow.png" in se.value_of_css_property("background-image")):
+                            if "xstar-yellow.png" in se.value_of_css_property("background-image"):
                                 total_stars += 1
                         row_lang = []
                         row_lang.append(profile_id)
@@ -217,8 +217,8 @@ for fonc in Fonctions:
                         addtoDB(xlsx_hlp.headers_nb_moments, row_nb_mom, "nb_moments_cles")
 
                     xlsx_hlp.save_wb()  # delete if slow speed and uncomment below save_wb()
-                    scr_hlp.pause_if_EXTRADEBUG("Data is being saved after each profile visit")
-                # xlsx_hlp.save_wb()#saves after a page
+                    scr_hlp.pause_if_EXTRADEBUG("Data saved after profile visit")
+                # xlsx_hlp.save_wb()# saves after a page
                 scr_hlp.pause_if_EXTRADEBUG("Going to add page")
                 if not is_next_exists:
                     break

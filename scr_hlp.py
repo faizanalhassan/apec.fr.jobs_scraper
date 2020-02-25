@@ -27,7 +27,9 @@ class scr_hlp:
     @staticmethod
     def pause_if_EXTRADEBUG(pausing_msg):
         if scr_hlp.EXTRADEBUG:
-            input(pausing_msg + " (Press enter to continue...)")
+            user_input = input(pausing_msg + " (Enter to continue false to turn off pausing...)")
+            if user_input.lower() == "false":
+                scr_hlp.EXTRADEBUG = False
         else:
             scr_hlp.print_if_DEBUG(pausing_msg)
 
@@ -154,16 +156,23 @@ class scr_hlp:
                 return
 
         if wait_ele_xpath != "":
-            for i in range(0, 10):
+            for i in range(0, 30):
+                scr_hlp.print_if_DEBUG(f"Waiting for {wait_ele_xpath}, iteration = {i}")
                 if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) >= ele_count:
+                    scr_hlp.print_if_DEBUG(f"Elements found")
                     break
-                if i == 9:
+
+                elif i == 29:
                     ans = input("Waited too long but page is not loading its dynamic contents."
                                 " Do you want to try load again? (y)")
                     if ans.lower() == 'y':
                         scr_hlp.load_page(url=url, count_visit=count_visit, do_handle_login=do_handle_login,
                                           wait_ele_xpath=wait_ele_xpath, ele_count=ele_count, refresh_also=refresh_also)
-
+                elif i % 10 == 0:
+                    if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) != 0:
+                        break
+                    scr_hlp.print_if_DEBUG(f"Refreshing browser. Because {wait_ele_xpath} not found.")
+                    scr_hlp.d.refresh()
                 sleep(1)
 
     @staticmethod
@@ -187,14 +196,6 @@ class scr_hlp:
             """
         scr_hlp.print_if_DEBUG("login with:" + login_script)
         return scr_hlp.d.execute_script(login_script)
-
-    @staticmethod
-    def handle_logout():
-        scr_hlp.print_if_DEBUG("Trying to logout")
-        url = scr_hlp.d.current_url
-        if scr_hlp.is_element_exists("//*[@class='nav-link nav-link-espace logged']"):
-            scr_hlp.click_element("//a[contains(@onclick,'logout')]")
-            scr_hlp.load_page(url, False, do_handle_login=False)
 
     @staticmethod
     def is_next_page_exists():
@@ -225,9 +226,7 @@ class scr_hlp:
         scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
         current_page = scr_hlp.d.current_url
         scr_hlp.load_page(pdf_link, count_visit=False, refresh_also=False)
-        scr_hlp.load_page(current_page, count_visit=False, wait_ele_xpath="//*[contains(@id,'photo-profil')]/img")
-        # scr_hlp.click_element("//button[contains(text(),'Autres actions')]
-        # //following-sibling::div/a[contains(text(),'Exporter')]")
+        # scr_hlp.load_page(current_page, count_visit=False, wait_ele_xpath="//*[contains(@id,'photo-profil')]/img")
         try:
             if len(scr_hlp.d.find_elements_by_xpath("//*[contains(@id,'photo-profil')]"
                                                     "/img[contains(@src,'no-photo.png')]")) == 0:

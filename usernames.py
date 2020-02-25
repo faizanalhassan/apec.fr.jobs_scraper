@@ -36,12 +36,11 @@ class Users:
 
         lastvisit = sheet.cell(Users.row_num, 3).value
         time_diff = (datetime.strptime(lastvisit, "%Y-%m-%d %H:%M:%S.%f") + timedelta(days=1)) - datetime.now()
-        scr_hlp.scr_hlp.pause_if_EXTRADEBUG(f"{datetime.now()}"
-                                            f" - ({datetime.strptime(lastvisit, '%Y-%m-%d %H:%M:%S.%f')}"
-                                            f" + {timedelta(days=1)})"
-                                            f"""{datetime.now() - 
-                                                 (datetime.strptime(lastvisit, '%Y-%m-%d %H:%M:%S.%f') 
-                                                  + timedelta(days=1))}""")
+        if count_visit:
+            scr_hlp.scr_hlp.pause_if_EXTRADEBUG(
+                f"({datetime.strptime(lastvisit, '%Y-%m-%d %H:%M:%S.%f')}"
+                f" + {timedelta(days=1)}) - {datetime.now()}"
+                f"= {time_diff}")
 
         if lastvisit != "" and time_diff.days == 0:
             if wait:
@@ -75,5 +74,7 @@ class Users:
         Users.wb.close()
         uname = sheet.cell(Users.row_num, 0).value
         passw = sheet.cell(Users.row_num, 1).value
-        scr_hlp.scr_hlp.pause_if_EXTRADEBUG(f"Username = {uname}\t pass = {passw}\t total visits = {totalvisits + 1}")
+        if count_visit:
+            scr_hlp.scr_hlp.pause_if_EXTRADEBUG(
+                f"Username = {uname}\t pass = {passw}\t total visits = {totalvisits + 1}")
         return uname, passw
