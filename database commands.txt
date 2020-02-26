@@ -1,0 +1,74 @@
+sudo apt update
+sudo apt install build-essential
+sudo apt-get install manpages-dev
+sudo apt-get install postgresql
+sudo apt-get install python-psycopg2
+sudo apt-get install libpq-dev
+sudo apt-get install python3-dev
+
+
+-- Database: candidates
+
+-- DROP DATABASE candidates;
+
+CREATE DATABASE candidates
+    WITH
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    LC_COLLATE = 'English_United States.1252'
+    LC_CTYPE = 'English_United States.1252'
+    TABLESPACE = pg_default
+    CONNECTION LIMIT = -1;
+
+CREATE TABLE main (
+	datasource TEXT,
+	profile_url TEXT,
+	id INT,
+	date_maj TEXT,
+	nb_consult TEXT,
+	date_der_consult TEXT,
+	photo_url TEXT,
+	name TEXT,
+	poste TEXT,
+	experience TEXT,
+	title TEXT,
+	dispo TEXT,
+	file_url TEXT,
+	file_dd_url TEXT,
+	linkedin_url TEXT,
+	contact_tel TEXT,
+	contact_email TEXT,
+	objectifs TEXT,
+	souhait_fonctions TEXT,
+	souhait_salaire TEXT,
+	souhait_lieux TEXT);
+CREATE TABLE compétences (
+	id int,
+	comp text,
+	compstars text,
+	complevel text,
+	compdesc text
+)
+CREATE TABLE lang (
+	id int,
+	lang text,
+	langstars int,
+	langlevel text
+)
+create table atouts(id int, Atouts text);
+create table nb_moments_cles(
+	id int,
+	dd_mom text,
+	df_mom text,
+	type_mom text,
+	title_mom text,
+	tagline_mom text,
+	comp_mom text,
+	location_mom text,
+	desc_mom text
+)
+SELECT * FROM main;
+SELECT * FROM compétences;
+select* from lang;
+select * from atouts;
+select * from nb_moments_cles;
