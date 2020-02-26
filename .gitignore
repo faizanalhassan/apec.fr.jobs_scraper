@@ -4,3 +4,5 @@ Lib
 Scripts
 tcl
 .env
+downloads*
+xlsx_files
