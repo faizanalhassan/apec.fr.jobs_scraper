@@ -5,12 +5,14 @@ from scr_hlp import scr_hlp, sleep, os
 from xlsx_hlp import xlsx_hlp
 from datetime import datetime
 from usernames import Users
-from database import addtoDB
+from database import addtoDB, DB
+
+DB.SAVE_ON = False
 
 scr_hlp.DEBUG = True
-scr_hlp.EXTRADEBUG = False  # use for pausing on some places
+scr_hlp.EXTRADEBUG = True  # use for pausing on some places
 scr_hlp.dwnload_dir = "downloads" + datetime.now().strftime("%d%m%y")
-scr_hlp.useproxy = False
+scr_hlp.useproxy = True
 
 # this should be 800 after some days
 Users.visitslimit = 200
