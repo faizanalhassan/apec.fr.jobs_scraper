@@ -156,19 +156,20 @@ class scr_hlp:
                 return
 
         if wait_ele_xpath != "":
-            for i in range(0, 30):
+            for i in range(0, 12):
+                pass
                 scr_hlp.print_if_DEBUG(f"Waiting for {wait_ele_xpath}, iteration = {i}")
                 if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) >= ele_count:
                     scr_hlp.print_if_DEBUG(f"Elements found")
                     break
 
-                elif i == 29:
+                elif i == 11:
                     ans = input("Waited too long but page is not loading its dynamic contents."
                                 " Do you want to try load again? (y)")
                     if ans.lower() == 'y':
                         scr_hlp.load_page(url=url, count_visit=count_visit, do_handle_login=do_handle_login,
                                           wait_ele_xpath=wait_ele_xpath, ele_count=ele_count, refresh_also=refresh_also)
-                elif i % 10 == 0:
+                elif i % 3 == 0:
                     if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) != 0:
                         break
                     scr_hlp.print_if_DEBUG(f"Refreshing browser. Because {wait_ele_xpath} not found.")

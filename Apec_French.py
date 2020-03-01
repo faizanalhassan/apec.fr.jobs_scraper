@@ -7,12 +7,13 @@ from datetime import datetime
 from usernames import Users
 from database import addtoDB, DB
 
-DB.SAVE_ON = False
+DB.SAVE_ON = True
 
 scr_hlp.DEBUG = True
-scr_hlp.EXTRADEBUG = True  # use for pausing on some places
-scr_hlp.dwnload_dir = "downloads" + datetime.now().strftime("%d%m%y")
-scr_hlp.useproxy = True
+scr_hlp.EXTRADEBUG = False  # use for pausing on some places
+#scr_hlp.dwnload_dir = "downloads" + datetime.now().strftime("%d%m%y")
+scr_hlp.dwnload_dir = "downloads"
+scr_hlp.useproxy = False
 
 # this should be 800 after some days
 Users.visitslimit = 200
