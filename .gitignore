@@ -4,5 +4,7 @@ Lib
 Scripts
 tcl
 .env
+.vscode
+.idea
 downloads*
 xlsx_files

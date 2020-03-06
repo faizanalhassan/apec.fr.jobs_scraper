@@ -82,7 +82,7 @@ for fonc in Fonctions:
                 for j in range(0, len(c_page_URLs)):
                     scr_hlp.print_if_DEBUG("%i url" % (j + 1))
                     scr_hlp.load_page(c_page_URLs[j], count_visit=True,
-                                      wait_ele_xpath="//*[contains(@id,'photo-profil')]/img", ele_count=1)
+                                      wait_ele_xpath="//*[contains(@id,'photo-profil') or @id='portrait-anonyme' ]/img", ele_count=1)
 
                     scr_hlp.click_element(
                         "//*[contains(@class,'condonnee-profil')]/button")  # button hiding tel and mail
