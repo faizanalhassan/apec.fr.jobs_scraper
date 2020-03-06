@@ -85,7 +85,7 @@ class scr_hlp:
     def initialize_browser_setup():
         scr_hlp.close_chrome()
         proxy = scr_hlp.proxies[scr_hlp.prox_i]
-        scr_hlp.print_if_DEBUG(f"Applying proxy = {proxy}")
+        scr_hlp.print_if_DEBUG(f"Applying proxy = {proxy}") if scr_hlp.useproxy else scr_hlp.print_if_DEBUG("no proxy applied")
         if scr_hlp.useproxy:
             scr_hlp.start_chrome(proxy)
         else:
@@ -156,7 +156,7 @@ class scr_hlp:
                 return
 
         if wait_ele_xpath != "":
-            for i in range(0, 12):
+            for i in range(0, 30):
                 pass
                 scr_hlp.print_if_DEBUG(f"Waiting for {wait_ele_xpath}, iteration = {i}")
                 if len(scr_hlp.d.find_elements_by_xpath(wait_ele_xpath)) >= ele_count:
@@ -174,7 +174,7 @@ class scr_hlp:
                         break
                     scr_hlp.print_if_DEBUG(f"Refreshing browser. Because {wait_ele_xpath} not found.")
                     scr_hlp.d.refresh()
-                sleep(1)
+                sleep(5)
 
     @staticmethod
     def handle_login(username, password):

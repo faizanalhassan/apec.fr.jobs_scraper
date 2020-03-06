@@ -12,12 +12,35 @@ class DB:
     SAVE_ON = True
 
 
+def does_id_exists_in_DB(profile_id):
+    if not DB.SAVE_ON:
+        scr_hlp.print_if_DEBUG("DB.SAVE_ON is False. So program is not fetching data")
+        return
+    conn = psycopg2.connect(user=pg_user,
+                            password=pg_pass,
+                            host=pg_host,
+                            port=pg_port,
+                            database=pg_db)
+    cur = conn.cursor()
+    cur.execute(f"select id from main where id={profile_id}")
+    count = cur.rowcount
+    cur.close()
+    conn.close()
+    scr_hlp.print_if_DEBUG(f"Checking if profile id: {profile_id} exists?")
+    if count != 0:
+        scr_hlp.pause_if_EXTRADEBUG("profile exists.")
+        return True
+    scr_hlp.pause_if_EXTRADEBUG("profile not exists")
+    return False
+
+
 def replaceq(string):
     return string.replace("'", "''")
 
 
 def addtoDB(columns_lst, values_lst, dtable):
     if not DB.SAVE_ON:
+        scr_hlp.print_if_DEBUG("DB.SAVE_ON is False. So program is not saving data")
         return
     conn = psycopg2.connect(user=pg_user,
                             password=pg_pass,
