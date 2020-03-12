@@ -19,6 +19,7 @@ class Users:
     ws = None
     headers = ["username", "password", "totalvisits"]
     visitslimit = 200
+    skip_current_user = False
 
     @staticmethod
     def get_credentials(count_visit):
@@ -52,8 +53,12 @@ class Users:
                 totalvisits = int(sheet.cell(Users.row_num, 2).value)
         else:
             totalvisits = 0
+        if Users.skip_current_user:
+            totalvisits = Users.visitslimit
+            scr_hlp.scr_hlp.pause_if_EXTRADEBUG("Trying to skip user")
+            Users.skip_current_user = False
         if not totalvisits < Users.visitslimit:
-            scr_hlp.scr_hlp.print_if_DEBUG(
+            scr_hlp.scr_hlp.pause_if_EXTRADEBUG(
                 f"This user has reached its limit. Total visits {totalvisits}. Trying other user.")
             Users.row_num += 1
             if scr_hlp.scr_hlp.useproxy:
@@ -61,6 +66,8 @@ class Users:
                 raise CustomException("No need to continue the caller function.")
             else:
                 return Users.get_credentials(count_visit)
+        else:
+            scr_hlp.scr_hlp.pause_if_EXTRADEBUG(f"totalvisits = {totalvisits}, Users.visitslimit = {Users.visitslimit}")
 
         for row in range(sheet.nrows):
             for col in range(sheet.ncols):

@@ -92,7 +92,7 @@ class scr_hlp:
             scr_hlp.start_chrome()
         scr_hlp.prox_i += 1
         scr_hlp.load_page(scr_hlp.list_page_URL, count_visit=False, do_handle_login=False)
-        sleep(2)
+        sleep(3)
         scr_hlp.click_element("//button[@class='optanon-allow-all accept-cookies-button']")
 
     @staticmethod
@@ -115,8 +115,26 @@ class scr_hlp:
             else:
                 print("Trying again to connect.")
 
+    
     @staticmethod
     def load_page(url, count_visit, do_handle_login=True, wait_ele_xpath="", ele_count=1, refresh_also=True):
+        count = 0
+        while True:
+            try:
+                scr_hlp.load_page_helper(url, count_visit, do_handle_login, wait_ele_xpath, ele_count, refresh_also)
+                break
+            except Exception as e:
+                scr_hlp.pause_if_EXTRADEBUG(f"Error: {e}\nTrying again realoading.")
+                count += 1
+                if count == 3:
+                    scr_hlp.pause_if_EXTRADEBUG(f"Skipping current user")
+                    Users.skip_current_user = True
+                    count = 0
+                
+
+
+    @staticmethod
+    def load_page_helper(url, count_visit, do_handle_login=True, wait_ele_xpath="", ele_count=1, refresh_also=True):
         scr_hlp.print_if_DEBUG(f"load_page(url={url}, do_handle_login={do_handle_login},"
                                f" wait_ele_xpath={wait_ele_xpath}, ele_count={ele_count},"
                                f" refresh_also={refresh_also}, count_visit={count_visit})")
@@ -225,20 +243,35 @@ class scr_hlp:
                                                    "::div/a[contains(text(),'Exporter')]").get_attribute("href")
         params = {'behavior': 'allow', 'downloadPath': os.path.join(scr_hlp.get_dwnload_dir_path(), profile_id)}
         scr_hlp.d.execute_cdp_cmd('Page.setDownloadBehavior', params)
-        current_page = scr_hlp.d.current_url
         scr_hlp.load_page(pdf_link, count_visit=False, refresh_also=False)
+        photo_download_script = """
+        node = document.evaluate("//*[contains(@id,'photo-profil')]/img[contains(@src,'no-photo.png')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+        if(node === null){
+            node = document.evaluate("//*[contains(@id,'photo-profil')]/img", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;
+            if(node !== null){
+                var a = document.createElement('a');
+                a.href = node.src;
+                a.download = node.src.substring(node.src.lastIndexOf('/') + 1);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                return node.src;
+            }
+        }
+        return "";
+        """
+        photo_url = scr_hlp.d.execute_script(photo_download_script)
         # scr_hlp.load_page(current_page, count_visit=False, wait_ele_xpath="//*[contains(@id,'photo-profil')]/img")
-        try:
-            if len(scr_hlp.d.find_elements_by_xpath("//*[contains(@id,'photo-profil')]"
-                                                    "/img[contains(@src,'no-photo.png')]")) == 0:
-                photo_url = scr_hlp.d.find_element_by_xpath("//*[contains(@id,'photo-profil')]/img") \
-                    .get_attribute("src")
-                photo_filename = os.path.join(scr_hlp.get_dwnload_dir_path(), profile_id, photo_url.split("/")[-1])
-                scr_hlp.print_if_DEBUG(photo_filename)
-                urllib.request.urlretrieve(photo_url, photo_filename)
-        except:
-            pass
-        # input("Wait download test")#remove
+        # try:
+        #     if len(scr_hlp.d.find_elements_by_xpath("//*[contains(@id,'photo-profil')]"
+        #                                             "/img[contains(@src,'no-photo.png')]")) == 0:
+        #         photo_url = scr_hlp.d.find_element_by_xpath("//*[contains(@id,'photo-profil')]/img") \
+        #             .get_attribute("src")
+        #         photo_filename = os.path.join(scr_hlp.get_dwnload_dir_path(), profile_id, photo_url.split("/")[-1])
+        #         scr_hlp.print_if_DEBUG(photo_filename)
+        #         urllib.request.urlretrieve(photo_url, photo_filename)
+        # except:
+        #     pass
         return photo_url
 
     @staticmethod
