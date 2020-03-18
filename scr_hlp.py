@@ -6,11 +6,18 @@ import shutil
 import sys
 import urllib.request
 from time import sleep
-
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-
 from usernames import Users, CustomException
+from threading import Thread
+
+
+def save_current_page(html):
+    scr_hlp.print_if_DEBUG("Saving current page.")
+    f = open("current_page.html", "w")
+    f.write(html)
+    f.close()
+    scr_hlp.print_if_DEBUG("Current page saved.")
 
 
 class scr_hlp:
@@ -122,6 +129,7 @@ class scr_hlp:
         while True:
             try:
                 scr_hlp.load_page_helper(url, count_visit, do_handle_login, wait_ele_xpath, ele_count, refresh_also)
+                sleep(3)
                 break
             except Exception as e:
                 scr_hlp.pause_if_EXTRADEBUG(f"Error: {e}\nTrying again realoading.")
@@ -130,6 +138,9 @@ class scr_hlp:
                     scr_hlp.pause_if_EXTRADEBUG(f"Skipping current user")
                     Users.skip_current_user = True
                     count = 0
+            finally:
+                html = scr_hlp.d.find_element_by_tag_name("html").get_attribute("outerHTML")
+                Thread(target=save_current_page, args=(html,)).start()
                 
 
 

@@ -129,8 +129,12 @@ for fonc in Fonctions:
                         """var fonc = document.evaluate("//*[contains(text(),'Fonctions :')]/parent::*/following-sibling::*", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue;if(fonc){fonc = fonc.children;}else{return ""}str = "";for( i = 0;i<fonc.length;i++){str += fonc[i].innerText +";";}return str;"""))  # fonc
                     row_main.append(scr_hlp.get_element_text(
                         "//*[contains(text(),'Salaire souhaité :')]/parent::*/following-sibling::*"))  # sal
-                    row_main.append(scr_hlp.d.execute_script(
-                        """var nodes = document.evaluate("//*[contains(text(),'Lieux :')]/parent::*/following-sibling::*", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue.children;str = "";for( i = 0;i<nodes.length;i++){str += nodes[i].innerText +";";}return str;"""))  # Lieux
+                    try:
+                        lieux = scr_hlp.d.execute_script(
+                        """var nodes = document.evaluate("//*[contains(text(),'Lieux :')]/parent::*/following-sibling::*", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null ).singleNodeValue.children;str = "";for( i = 0;i<nodes.length;i++){str += nodes[i].innerText +";";}return str;""")
+                    except:
+                        lieux = ""
+                    row_main.append(lieux)  # Lieux
                     scr_hlp.print_if_DEBUG(row_main)
 
                     for k in range(0, len(row_main)):
