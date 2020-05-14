@@ -1,0 +1,63 @@
+Ok.
+
+The script crawl and scrap data from a french Job Board with Selenium.
+It connects using various usernames (changes every xx visited pages), and can use proxies.
+The script scraps users data and store them in xlsx files and Postgresql DB.
+
+So I need to clean it, improve it and organize the script to look like this :
+
+-------------------------------
+---- FILES ----
+-------------------------------
+
+*extapec.py
+---------------------------
+Script to scrap and store data and files as per requirments
+- Connect to the website (using usernames and proxies if required)
+- Scrap and Store the data into xlsx file in BDD FOLDER
+- Download files to Download FOLDER
+- Import the data into DB
+- CHMOD the DBB and DOWNLOAD files to 777
+- Send Email with report
+
+
+*extapec_func
+---------------------------
+Contains all the script functions (scr_hlp - xlsx_hlp - db_hlp)
+- CHMOD downloads
+
+
+*Extapec_datatools.xlsx
+---------------------------
+Tab1 : usernames
+> Contains all the usernames / passwords
+
+Tab2 : proxies
+> Contains all the proxies
+
+Tab3 : fonctions_lieux
+> Contains the list of fonctions and lieux to add in url
+
+Tab4 : Counts
+> Contain all the counts needed to follow the scraping
+
+Tab5 : Queries
+> Store the queries that have been made in url with date
+
+Tab7 : Variables
+> Contains the variables needed by the script like filenames, path etc.
+> Contains all the triggers also to ON/OFF debug or DB etc.
+
+-------------------------------
+---- FOLDERS ----
+-------------------------------
+
+/Downloads
+> Contains All the downloaded files (resumes)
+
+/bdd
+> Contains all the scraped data. One file per day.
+
+/logs
+> Contains all the log files to follow errors or success. One file per day.
+
