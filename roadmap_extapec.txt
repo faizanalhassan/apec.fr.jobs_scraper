@@ -17,15 +17,14 @@ Script to scrap and store data and files as per requirments
 - Scrap and Store the data into xlsx file in BDD FOLDER
 - Download files to Download FOLDER
 - Import the data into DB
-- CHMOD the DBB and DOWNLOAD files to 777
-- Send Email with report
+*- Unzip and CHMOD 755 DDB and DOWNLOad Folder
+*- Send Email with report (count records and files)
 
 
-*extapec_func
+*extapec_func.py
 ---------------------------
 Contains all the script functions (scr_hlp - xlsx_hlp - db_hlp)
-- CHMOD downloads
-
+Which are called by the main script.
 
 *Extapec_datatools.xlsx
 ---------------------------
@@ -44,7 +43,7 @@ Tab4 : Counts
 Tab5 : Queries
 > Store the queries that have been made in url with date
 
-Tab7 : Variables
+Tab6 : Variables
 > Contains the variables needed by the script like filenames, path etc.
 > Contains all the triggers also to ON/OFF debug or DB etc.
 
